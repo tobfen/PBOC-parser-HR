@@ -1,0 +1,31 @@
+version: '2'
+networks:
+  bridge:
+    driver: bridge
+services:
+
+  parse:
+    image: test-python-17:latest
+    mem_limit: 12288m
+    mem_reservation: 8192m
+    restart: always
+    networks:
+    - bridge
+    volumes:
+    - ./localtime:/usr/share/zoneinfo/Asia/Shanghai:ro
+    - ./localtime:/etc/localtime:ro
+    - ./timezone:/etc/timezone:ro
+    - ./python/5_7/parse_2gen_2010_0103.py:/usr/local/parseZx/5_7/parse_2gen_2010_0103.py:rw
+    - ./python/5_7/run_2gen_2010.py:/usr/local/parseZx/5_7/run_2gen_2010.py:rw
+    - ./python/1_4/exec_main.py:/usr/local/parseZx/1_4/exec_main.py:rw
+    - ./python/1_4/xml_function.py:/usr/local/parseZx/1_4/xml_function.py:rw
+    - ./python/1_4/xml_to_excel.py:/usr/local/parseZx/1_4/xml_to_excel.py:rw
+    - ./config/2010.xlsx:/usr/local/parseZx/2010.xlsx:rw
+    - ./config/field.xlsx:/usr/local/parseZx/field.xlsx:rw
+    - ./config/preaudit.xlsx:/usr/local/parseZx/preaudit.xlsx:rw
+    - ./config/xml2/rhzx.xml:/usr/local/parseZx/xml2/rhzx.xml:rw
+    - ./jar/app.jar:/usr/local/parseZx/app.jar:rw
+    - ./jar/xjar_agentable:/usr/local/parseZx/xjar_agentable:rw
+    - ./logs:/data/logs
+    ports:
+    - "10014:10014"
