@@ -32,7 +32,7 @@ for j in [i for i in os.listdir(path) if i.split('.')[1]=='xml']:
         src_file = os.path.join(path, j)
         tar_path = './失败xml'
         shutil.copy(src_file, tar_path)
-    os.remove(os.path.join(path, j))
-    os.remove(os.path.join(path, 'sample.txt'))
+    # os.remove(os.path.join(path, j))
+    # os.remove(os.path.join(path, 'sample.txt'))
 
 

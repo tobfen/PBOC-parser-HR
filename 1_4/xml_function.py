@@ -26,6 +26,81 @@ def list_to_df(file):
     return df
 
 #%%
+
+def split_org(v):
+    if isinstance(v, str) and '"' in v:
+        parts = v.split('"')
+        return parts[0], parts[1] if len(parts) > 1 else np.nan
+    return np.nan, v
+
+###字典转换方法
+def dic_convert(dic_type, value):
+    """
+    根据字典类型和值，转换为对应的代码
+
+    参数:
+        dic_type: 字典类型（如"查询原因"、"机构类型"）
+        value: 值（如"贷后管理"、"融资租赁公司"）
+
+    返回:
+        对应的代码（如"01"、"22"），如果未找到返回None
+    """
+    # 查询原因字典
+    dic_query_reason = {
+        "贷后管理":"01",
+        "贷款审批":"02",
+        "信用卡审批":"03",
+        "担保资格审查":"08",
+        "司法调查":"09",
+        "公积金提取复核查询":"16",
+        "股指期货开户":"18",
+        "特约商户实名审查":"19",
+        "保前审查":"20",
+        "保后管理":"21",
+        "法人代表、负责人、高管等资信审查":"22",
+        "客户准入资格审查":"23",
+        "融资审批":"24",
+        "资信审查":"25",
+        "额度审批":"26"
+    }
+
+    # 机构类型字典
+    dic_institution_type = {
+        "商业银行":"11",
+        "村镇银行":"12",
+        "住房储蓄银行":"14",
+        "外资银行":"15",
+        "财务公司":"16",
+        "信托公司":"21",
+        "融资租赁公司":"22",
+        "汽车金融公司":"23",
+        "消费金融公司":"24",
+        "贷款公司":"25",
+        "金融资产管理公司":"26",
+        "证券公司":"31",
+        "保险公司":"41",
+        "小额贷款公司":"51",
+        "公积金管理中心":"52",
+        "融资担保公司":"53",
+        "保理公司":"54",
+        "其他机构":"99"
+    }
+
+    # 根据字典类型选择对应的字典
+    if dic_type == "dic_query_reason":
+        dic = dic_query_reason
+    elif dic_type == "dic_institution_type":
+        dic = dic_institution_type
+    else:
+        return value
+
+    # 处理 Series 类型（批量转换）
+    if isinstance(value, pd.Series):
+        return value.map(lambda x: dic.get(x, x) if pd.notna(x) else x)
+    # 处理单个值
+    return dic.get(value, value)
+
+#%%
 ###获取身份证号PCRID，作为主键
 # def prcid_value(temp1):
 #     try:
@@ -808,6 +883,15 @@ def infoSummary_df(temp1,column_type = 'CNH'):
                     ]
         
     for i in column_list:
+            # 拆分 PC05AD01 融资担保公司"FL" → 查询机构类型=中文名, 查询机构=代码）
+        if "PC05AD01" in infoSummary_df.columns:
+            split_result = infoSummary_df["PC05AD01"].apply(lambda x: pd.Series(split_org(x)))
+            infoSummary_df["PC05AD01"] = dic_convert("dic_institution_type",split_result[0])
+            infoSummary_df["PC05AI01"] = split_result[1]
+
+        if "PC05AQ01" in infoSummary_df.columns:
+            infoSummary_df["PC05AQ01"] = dic_convert("dic_query_reason",infoSummary_df["PC05AQ01"])
+
         if i not in list(infoSummary_df.columns):
             infoSummary_df[i] = np.nan
     
@@ -3784,7 +3868,13 @@ def inquiryRecord(temp1,column_type = 'CNH'):
     for i in column_list:
         if i not in list(inquiryRecord_df.columns):
             inquiryRecord_df[i] = np.nan
-    
+
+    # 拆分 PH010Q02（如 融资担保公司"FL" → 查询机构类型=中文名, 查询机构=代码）
+    if "PH010Q02" in inquiryRecord_df.columns:
+        split_result = inquiryRecord_df["PH010Q02"].apply(lambda x: pd.Series(split_org(x)))
+        inquiryRecord_df["PH010D01"] = dic_convert("dic_institution_type", split_result[0])
+        inquiryRecord_df["PH010Q02"] = split_result[1]
+
     inquiryRecord_df = inquiryRecord_df[column_list]
     if column_type == 'CNH':
         inquiryRecord_df.rename(columns = columns_chinese,inplace=True)
@@ -3902,3 +3992,4 @@ def rhId(temp1,column_type = 'CNH'):
     else:
         rhId_df.rename(columns = columns_english,inplace=True)
     return rhId_df
+
